@@ -2,7 +2,7 @@ package Trigger;
 
 use strict;
 use 5.8.1;
-our $VERSION = '0.01';
+our $VERSION = '0.02_01';
 
 use base qw(Class::Accessor::Fast);
 
@@ -40,7 +40,7 @@ sub new {
         push @{$self->_action} , $action;
     }
     $self->_trigger_and_action( $self->_trigger_and_action / 2 - 1);
-    $args->{init}->($self->heap) if defined $args->{init} and ref $args->{init};
+    $args->{init}->($self) if defined $args->{init} and ref $args->{init};
     return $self;
 }
 
@@ -49,8 +49,17 @@ sub eval{
     my @action_re;
     my @process_re = $self->_process->($self => @_);
     for ( 0 .. $self->_trigger_and_action ){
-        my @trigger_re = $self->_trigger->[$_]->($self => @process_re);
-        @action_re = $self->_action->[$_]->($self => @trigger_re) if @trigger_re;
+        if( my @trigger_re = $self->_trigger->[$_]->($self => @process_re) ){
+        	if( ref $self->_action->[$_] eq 'CODE' ){
+		        @action_re = $self->_action->[$_]->($self => @trigger_re) ;
+		    }elsif( ref $self->_action->[$_] eq 'ARRAY' ){
+		    	for my $code( @{$self->_action->[$_]} ){
+		    		@action_re = $code->($self => @trigger_re);
+		    	}
+		    }else{
+		    	die ref $self->_action->[$_];
+		    }
+        }
     }
     @action_re ? return @action_re : return @process_re;
 }
@@ -199,5 +208,3 @@ under the same terms as Perl itself.
 
 
 =cut
-
-1; # End of Trigger
