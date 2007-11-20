@@ -17,7 +17,7 @@ sub _carp {
 
 
 use vars qw($VERSION @ISA @EXPORT %EXPORT_TAGS $TODO);
-$VERSION = '0.72';
+$VERSION = '0.70';
 $VERSION = eval $VERSION;    # make the alpha version come out as a number
 
 use Test::Builder::Module;
@@ -314,12 +314,6 @@ sub _is_module_name {
 
 use vars qw(@Data_Stack %Refs_Seen);
 my $DNE = bless [], 'Does::Not::Exist';
-
-sub _dne {
-    ref $_[0] eq ref $DNE;
-}
-
-
 sub is_deeply {
     my $tb = Test::More->builder;
 
@@ -392,8 +386,8 @@ sub _format_stack {
     foreach my $idx (0..$#vals) {
         my $val = $vals[$idx];
         $vals[$idx] = !defined $val ? 'undef'          :
-                      _dne($val)    ? "Does not exist" :
-                      ref $val      ? "$val"           :
+                      $val eq $DNE  ? "Does not exist" :
+	              ref $val      ? "$val"           :
                                       "'$val'";
     }
 
@@ -417,7 +411,7 @@ sub _type {
     return '';
 }
 
-#line 925
+#line 919
 
 sub diag {
     my $tb = Test::More->builder;
@@ -426,7 +420,7 @@ sub diag {
 }
 
 
-#line 994
+#line 988
 
 #'#
 sub skip {
@@ -454,7 +448,7 @@ sub skip {
 }
 
 
-#line 1081
+#line 1075
 
 sub todo_skip {
     my($why, $how_many) = @_;
@@ -475,7 +469,7 @@ sub todo_skip {
     last TODO;
 }
 
-#line 1134
+#line 1128
 
 sub BAIL_OUT {
     my $reason = shift;
@@ -484,7 +478,7 @@ sub BAIL_OUT {
     $tb->BAIL_OUT($reason);
 }
 
-#line 1173
+#line 1167
 
 #'#
 sub eq_array {
@@ -542,7 +536,7 @@ sub _deep_check {
         if( defined $e1 xor defined $e2 ) {
             $ok = 0;
         }
-        elsif ( _dne($e1) xor _dne($e2) ) {
+        elsif ( $e1 == $DNE xor $e2 == $DNE ) {
             $ok = 0;
         }
         elsif ( $same_ref and ($e1 eq $e2) ) {
@@ -608,7 +602,7 @@ WHOA
 }
 
 
-#line 1304
+#line 1298
 
 sub eq_hash {
     local @Data_Stack;
@@ -641,7 +635,7 @@ sub _eq_hash {
     return $ok;
 }
 
-#line 1361
+#line 1355
 
 sub eq_set  {
     my($a1, $a2) = @_;
@@ -667,6 +661,6 @@ sub eq_set  {
     );
 }
 
-#line 1551
+#line 1545
 
 1;

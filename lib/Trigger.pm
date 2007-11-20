@@ -2,7 +2,7 @@ package Trigger;
 
 use strict;
 use 5.8.1;
-our $VERSION = '0.02_01';
+our $VERSION = '0.02';
 
 use base qw(Class::Accessor::Fast);
 
@@ -50,15 +50,15 @@ sub eval{
     my @process_re = $self->_process->($self => @_);
     for ( 0 .. $self->_trigger_and_action ){
         if( my @trigger_re = $self->_trigger->[$_]->($self => @process_re) ){
-        	if( ref $self->_action->[$_] eq 'CODE' ){
-		        @action_re = $self->_action->[$_]->($self => @trigger_re) ;
-		    }elsif( ref $self->_action->[$_] eq 'ARRAY' ){
-		    	for my $code( @{$self->_action->[$_]} ){
-		    		@action_re = $code->($self => @trigger_re);
-		    	}
-		    }else{
-		    	die ref $self->_action->[$_];
-		    }
+            if( ref $self->_action->[$_] eq 'CODE' ){
+                @action_re = $self->_action->[$_]->($self => @trigger_re) ;
+            }elsif( ref $self->_action->[$_] eq 'ARRAY' ){
+                for my $code( @{$self->_action->[$_]} ){
+                    @action_re = $code->($self => @trigger_re);
+                }
+            }else{
+                die ref $self->_action->[$_];
+            }
         }
     }
     @action_re ? return @action_re : return @process_re;
@@ -73,50 +73,64 @@ sub DESTROY{
 1;
 __END__
 
+=encoding utf-8
+
 =head1 NAME
 
 Trigger - Trigger framework
 
 =head1 SYNOPSIS
 
-  use Trigger;
-  my $trigger = Trigger->new(
-      inline_states => {
-          heap        => {}, # \%hash or \@array or \$scalar or \&sub or object
-          init        => sub {
-              my $context = shift;
-              my $heap = $context->heap;
-              # Initial processing
-          },
-          process     =>  sub {
-              my $context = shift;
-              my $heap = $context->heap;
-              my @args = @_;
-              # Main processing
-          },
-          trigger_and_action => [
-              sub { # trigger
-                  my $context = shift;
-                  my $heap = $context->heap;
-                  my @args = @_; # The return value of 'process'
-                  # The conditions used as a trigger
-                  # 'trigger' must return ('return $result' or only 'return').
-                  # ex.) defined $result ? return $result : return;
-              } => sub { # action
-                  my $context = shift;
-                  my $heap = $context->heap;
-                  # Processing to carry out when a condition was satisfied
+	use Trigger;
+	my $trigger = Trigger->new(
+		inline_states => {
+		    heap        => {}, # \%hash or \@array or \$scalar or \&sub or object
+		    init        => sub {
+		        my $context = shift;
+		        my $heap = $context->heap;
+		        # Initial processing
+		    },
+		    process     =>  sub {
+		        my $context = shift;
+		        my $heap = $context->heap;
+		        my @args = @_;
+		        # Main processing
+		    },
+	
+		    trigger_and_action => [
+		        sub { # trigger
+		            # The place which defines conditions.
+		            my $context = shift;
+		            my $heap = $context->heap;
+		            my @args = @_; # The return value of 'process'
+		            # 'trigger' must return a value or must return FALSE.
+		            # ex.) defined $result ? return $result : return;
+		        } => sub { # action
+		            my $context = shift;
+		            my $heap = $context->heap;
+		            # Processing to carry out when a condition was satisfied
 
-                  # 'action' will be performed if 'trigger' returns true.
-                  my @trigger_re = @_; # The return value of 'trigger'
-              },
+		            # 'action' will be performed if 'trigger' returns true.
+		            my @trigger_re = @_; # The return value of 'trigger'
+		        },
 
-              #   One or more triggers and actions can be defined.
-              sub { # trigger
-                  #   :
-              } => sub { # action
-                  #   :
-              },
+		        #   One or more triggers and actions can be defined.
+                sub { # trigger
+                    #   :
+                } => [ 
+                	# The reference of arrangement can define two or more "actions."
+                	# "Action" is performed by the defined turn.
+                	sub { # action
+	                    my $context = shift;
+    	                my $heap = $context->heap;
+                    	#   :
+                	},
+                	sub { # action
+	                    my $context = shift;
+    	                my $heap = $context->heap;
+                    	#   :
+                	},
+                ],
           ],
           end     =>  sub {
               my $context = shift;
@@ -171,7 +185,6 @@ automatically be notified of progress on your bug as I make changes.
 You can find documentation for this module with the perldoc command.
 
     perldoc Trigger
-    perldoc Trigger::JA  ;# Japanese document
 
 You can also look for information at:
 

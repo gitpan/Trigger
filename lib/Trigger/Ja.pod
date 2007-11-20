@@ -1,8 +1,8 @@
-﻿=encoding utf-8
+=encoding utf-8
 
 =head1 NAME
 
-Trigger - トリガにより処理を行う。
+Trigger - Trigger framework
 
 =head1 概要
 
@@ -22,18 +22,18 @@ Trigger - トリガにより処理を行う。
             },
             trigger_and_action => [
                 sub { # trigger
+                    # トリガーとなる条件を定義するところ
                     my $context = shift;
                     my $heap = $context->heap;
                     my @args = @_; # 'process'の戻り値をパラメータとして受け取る
-                    # トリガ（条件）を定義する
-                    # 'trigger' は true or false が戻り値となるように定義する。
+                    # 'trigger'は、値を返すか又はFALSEを返さなければならない。
                     # false を戻り値としたい場合、return 0 としてはならない、
                     # false を戻り値としたい場合は、ただ単に return と書くこと。
                     # 例）defined $result ? return $result : return;
                 } => sub { # action
+                    # 'trigger'にの戻り値がある場合に実行される アクションを定義する。
                     my $context = shift;
                     my $heap = $context->heap;
-                    # 'trigger'の戻り値が true の時'action'が実行されます。
 
                     # トリガーの戻り値をパラメータとして受け取る
                     my @trigger_re = @_; 
@@ -42,10 +42,23 @@ Trigger - トリガにより処理を行う。
                 
                 # 複数の'trigger'を定義することができます。
                 sub { # trigger
+                    my $context = shift;
+                    my $heap = $context->heap;
                     #   :
-                } => sub { # action
-                    #   :
-                },
+                } => [ 
+                	# 「アクション」を配列のリファレンスで複数定義できます。
+                	# 定義した順番に「アクション」は実行されます。
+                	sub { # action
+	                    my $context = shift;
+    	                my $heap = $context->heap;
+                    	#   :
+                	},
+                	sub { # action
+	                    my $context = shift;
+    	                my $heap = $context->heap;
+                    	#   :
+                	},
+                ],
             ],
             end     =>  sub {
                 my $context = shift;
@@ -135,5 +148,3 @@ under the same terms as Perl itself.
 
 
 =cut
-
-1; # End of Trigger
